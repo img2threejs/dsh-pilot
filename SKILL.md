@@ -57,7 +57,7 @@ Do not edit the bundle — an upstream update will take the edit back. Write an 
 - id: acp
   config:
     provider: atlascloud
-    model: deepseek-ai/deepseek-v4-flash
+    model: deepseek-ai/deepseek-v4-flash-0731-0731
 ```
 
 **`session/new` can return an empty option list.** The README describes `session/set_config_option` for choosing `model` and `reasoning_effort`, and on this composition the returned `configOptions` is empty — so the model cannot be switched per session that way. It must be pinned in plugin config, which means **one model per server process**. To compare models, start one server per model rather than reconfiguring a session.
@@ -94,7 +94,7 @@ llm-pi-ai:
       api: openai-completions
       baseURL: https://api.atlascloud.ai/v1
       models:
-        - id: deepseek-ai/deepseek-v4-flash
+        - id: deepseek-ai/deepseek-v4-flash-0731
 ```
 
 `apiKeyEnv` rather than an inline key: this file is hand-edited and gets copied around. Mode 600 on both it and any patch overlay.

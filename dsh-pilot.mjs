@@ -20,7 +20,7 @@ const arg = (name, fallback) => {
 };
 const cwd = resolve(arg('cwd', process.cwd()));
 const briefPath = arg('brief');
-const model = arg('model', 'deepseek-ai/deepseek-v4-flash');
+const model = arg('model', 'deepseek-ai/deepseek-v4-flash-0731');
 const provider = arg('provider', 'atlascloud');
 const outPath = arg('out');
 const timeoutMs = Number(arg('timeout', '3600')) * 1000;
