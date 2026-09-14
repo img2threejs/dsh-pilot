@@ -126,26 +126,49 @@ Same brief, same starting commit, two harnesses.
 | | pi + MiniMax-M3 | dsh + deepseek-v4-flash |
 | --- | --- | --- |
 | wall clock | ~780s | **306s** |
-| committed its work | yes, 3 commits | **no — left the tree dirty** |
+| committed its work | yes, 3 commits | no — see the correction below |
 | ran its own change | yes | no (worktree had no deps; it did not notice) |
 | the finding that needed measuring, not reading | found it | missed it |
-| completion signal | the commits | `stopReason=undefined` — nothing says "done" |
 
-dsh is roughly 2.5× faster and did close the blocking defect it was asked to close. It is not
-yet usable as an unattended coder, for three reasons that are the driver's fault as much as the
-model's:
+### The "dsh does not commit" finding was wrong
 
-1. **`session/prompt` does not return `stopReason`.** The driver logs `undefined` and has
-   nothing to check. Take the completion signal from the `session/update` stream instead, and
-   treat a turn that ends without one as a failure, not a success.
-2. **The driver reports success on a dirty tree.** It must not. Either the brief requires a
-   commit and the driver verifies one exists, or the driver exits non-zero and says what is
-   uncommitted.
-3. **It cannot tell a broken environment from a passing one.** Its script reported `0 of 8`
-   gates because `npm test` could not start, and nothing in the run flagged that. Check the test
-   command runs at all before the run begins.
+It was recorded here as a model or harness weakness. It is neither. `git commit` needs an
+escalation to `danger-full-access`, and under the default `workspace-write` preset that
+escalation is **cancelled without ever reaching the client** — no `session/request_permission`
+arrives, so there is nothing to answer. The turn then ends normally and the tree is quietly
+dirty.
 
-Until 1 and 2 are fixed, use dsh for work that is verified by reading its diff — probes,
-one-file edits, throwaway analysis — and use pi where the result has to land as a commit.
+Measured, same brief and same model, only the preset differing:
+
+```
+--permission-mode workspace-write      → stopReason=absent settled=false delivered=false, no commit
+--permission-mode danger-full-access   → stopReason=end_turn settled=true  delivered=true, commit landed
+```
+
+The cause was a configuration the orchestrator never set. Two lessons, and the second is the
+one that keeps recurring here:
+
+- Pass `--permission-mode danger-full-access` whenever the run is expected to produce commits.
+  It is not the default because it turns approval prompts off on a host with no isolation.
+- **When an agent fails to do something, find the mechanism before you write down a verdict
+  about the agent.** "It didn't commit" was true and the explanation attached to it was
+  invented. It cost a wrong entry in this file and a wrong entry in the project's evidence.
+
+### Driver defects found and fixed in the same pass
+
+1. **`session/prompt` does not reliably return `stopReason`.** It returned `end_turn` on a
+   read-only turn and nothing at all on a turn that used tools. The driver now also reads the
+   `session/update` stream and reports `absent` rather than `unknown` when neither carries one.
+2. **The driver reported success on a dirty tree.** It now compares HEAD before and after and
+   checks `git status --porcelain`, exits 1 when nothing landed, and says which of the two.
+   `--no-require-commit` opts out.
+3. **It waited out a full timeout for a child that had already died.** DSH needs Node >= 22
+   (`createZstdDecompress`, `Promise.withResolvers`); spawned as bare `node` it inherited v20
+   from PATH, died during plugin load, and the driver sat for 600s before reporting "no
+   settlement" — blaming the wait for a startup failure. It now resolves a Node >= 22 binary,
+   treats an explicit `--node` as a pin rather than a preference, and fails within seconds when
+   the child exits, printing the harness's own stderr.
+4. **`--precheck <cmd>`** runs a command in the target directory first and exits 3 if it fails,
+   so a run cannot be spent in a worktree where the test command cannot start.
 
 One sample. This project has already seen a model ranking flip between two consecutive rounds.
