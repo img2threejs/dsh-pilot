@@ -118,3 +118,34 @@ Prove the instrument can report a positive before trusting it to report a negati
 Measured on this host: `initialize` → protocol version 1; `session/new` → a session id; a prompt answered in 2 seconds through `atlascloud/deepseek-ai/deepseek-v4-flash`; `session/close` clean. The overlay is what made the prompt work; without it the same setup failed on the hard-coded route.
 
 Not established: `session/list` / `session/resume` across a server restart, cancellation, MCP mounting, image input, or any run long enough to exercise permission prompts. Those are claims from the README, not from a run, and this skill says so rather than repeating them as fact.
+
+## Measured against pi as a coder (round 4, one sample)
+
+Same brief, same starting commit, two harnesses.
+
+| | pi + MiniMax-M3 | dsh + deepseek-v4-flash |
+| --- | --- | --- |
+| wall clock | ~780s | **306s** |
+| committed its work | yes, 3 commits | **no — left the tree dirty** |
+| ran its own change | yes | no (worktree had no deps; it did not notice) |
+| the finding that needed measuring, not reading | found it | missed it |
+| completion signal | the commits | `stopReason=undefined` — nothing says "done" |
+
+dsh is roughly 2.5× faster and did close the blocking defect it was asked to close. It is not
+yet usable as an unattended coder, for three reasons that are the driver's fault as much as the
+model's:
+
+1. **`session/prompt` does not return `stopReason`.** The driver logs `undefined` and has
+   nothing to check. Take the completion signal from the `session/update` stream instead, and
+   treat a turn that ends without one as a failure, not a success.
+2. **The driver reports success on a dirty tree.** It must not. Either the brief requires a
+   commit and the driver verifies one exists, or the driver exits non-zero and says what is
+   uncommitted.
+3. **It cannot tell a broken environment from a passing one.** Its script reported `0 of 8`
+   gates because `npm test` could not start, and nothing in the run flagged that. Check the test
+   command runs at all before the run begins.
+
+Until 1 and 2 are fixed, use dsh for work that is verified by reading its diff — probes,
+one-file edits, throwaway analysis — and use pi where the result has to land as a commit.
+
+One sample. This project has already seen a model ranking flip between two consecutive rounds.
