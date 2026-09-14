@@ -16,7 +16,26 @@ DeepSeek Harness is **not** shaped like PI, and the difference decides how you d
 
 A controller written for PI will not work here. `pilot.py` answers "is this run alive" from `/proc`; for DSH that answer is incomplete, because a dead server can still leave a session that `session/resume` will pick up.
 
-## Start it
+## Drive it
+
+`dsh-pilot.mjs` runs one task end to end and exits, so a caller can treat DSH like
+any other job:
+
+```sh
+ATLASCLOUD_API_KEY=… node ~/.claude/skills/dsh-pilot/dsh-pilot.mjs \
+  --cwd <worktree> --brief <file> [--model <id>] [--out <transcript>] [--timeout <seconds>]
+```
+
+It writes the overlay itself from `--model` / `--provider`, answers permission
+requests as they arrive, and keeps stdout to a single summary line while the
+transcript goes to `--out`.
+
+The exit code separates the two things every wrong call in this project has
+confused: **0** the turn settled on `end_turn`, **1** it ended some other way,
+**124** no settlement inside the timeout. "The agent is done" and "I stopped
+waiting" are different answers and the caller has to be able to tell them apart.
+
+## Start it by hand
 
 ```sh
 ATLASCLOUD_API_KEY=… pnpm dsh --profile acp --patch ~/.dsh/atlascloud.patch.yml
