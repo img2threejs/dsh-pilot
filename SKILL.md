@@ -5,6 +5,28 @@ description: Drive DeepSeek Harness agents over the Agent Client Protocol — st
 
 # Drive DSH
 
+## Verdict: use pi, not this, for coding work
+
+Measured, not assumed. The same "edit a file and commit it" task:
+
+| | dsh | pi + the same DeepSeek model |
+| --- | --- | --- |
+| wall clock | 14s | **13s** |
+| configuration needed | `--permission-mode danger-full-access`, or the commit is cancelled | none |
+| reads the project's `AGENTS.md` | **no** | yes, by default (`--no-context-files` turns it off) |
+| driver to maintain | ~130 lines, four defects found in one session | none |
+| models per process | one — `session/new` returns empty `configOptions` | `--model`, per run |
+
+The `AGENTS.md` row is the one that decides it. That file is where this project's standard lives,
+which is what lets a brief describe the task instead of restating the rules. A harness that does
+not load it drops the standard from every run silently — the exact degradation shape the project
+exists to catch.
+
+Nothing here is broken: the driver below works, and a commit was demonstrated landing through it.
+It simply earns nothing that pi does not already do. Keep this skill for driving DSH when DSH
+itself is the subject, not as a coding harness.
+
+
 DeepSeek Harness is **not** shaped like PI, and the difference decides how you drive it.
 
 | | PI | DSH |
