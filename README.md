@@ -13,7 +13,7 @@ workspace's `AGENTS.md`, so a brief describes the task and the repository carrie
 | | |
 | --- | --- |
 | `SKILL.md` | the operating knowledge — what costs time, what a negative result does not prove |
-| `dsh-pilot.mjs` | the driver: one task, start to finish, over ACP |
+| `pilot.py` | the driver: one task, start to finish, over ACP |
 
 ## Requirements
 
@@ -27,7 +27,7 @@ workspace's `AGENTS.md`, so a brief describes the task and the repository carrie
 ## Use
 
 ```sh
-node dsh-pilot.mjs --cwd <worktree> --brief <file> [--out <log>] \
+python3 pilot.py --cwd <worktree> --brief <file> [--out <log>] \
   [--model <id>] [--provider <id>] [--permission-mode danger-full-access] \
   [--precheck 'npm test'] [--node /path/to/node22+] [--timeout 3600]
 ```
@@ -38,6 +38,7 @@ Exit codes are the point:
 | --- | --- |
 | `0` | the turn settled **and** the work landed as a commit |
 | `1` | it ended without settling, or nothing landed |
+| `2` | the invocation itself was wrong |
 | `3` | refused before starting — no Node ≥ 22, precheck failed, or the harness died at startup |
 | `124` | no settlement inside the timeout |
 
