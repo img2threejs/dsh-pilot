@@ -5,38 +5,30 @@ description: Drive DeepSeek Harness agents over the Agent Client Protocol — st
 
 # Drive DSH
 
-## Verdict: use pi, not this, for coding work
+## It loads the project's `AGENTS.md` — a correction
 
-Measured, not assumed. The same "edit a file and commit it" task:
+This file previously said dsh does **not** load the workspace's `AGENTS.md`, and called that the
+deciding reason to prefer pi. That was wrong, and it was wrong because of how I measured: a grep
+turned up `AGENTS.md` inside `packages/context/agent-instructions/src/index.ts` and I dismissed it
+as the harness documenting itself. It is the loader. `agent-instructions` is mounted by the base
+bundle at `packages/bundle/base/cordis.patch.yml:274`.
 
-| | dsh | pi + the same DeepSeek model |
-| --- | --- | --- |
-| wall clock | 14s | **13s** |
-| configuration needed | `--permission-mode danger-full-access`, or the commit is cancelled | none |
-| reads the project's `AGENTS.md` | **no** | yes, by default (`--no-context-files` turns it off) |
-| driver to maintain | ~130 lines, four defects found in one session | none |
-| models per process | one — `session/new` returns empty `configOptions` | `--model`, per run |
+Measured properly, by putting a string in an `AGENTS.md` that appears nowhere else and asking for
+it back:
 
-The `AGENTS.md` row is the one that decides it. That file is where this project's standard lives,
-which is what lets a brief describe the task instead of restating the rules. A harness that does
-not load it drops the standard from every run silently — the exact degradation shape the project
-exists to catch.
+```
+AGENTS.md: "The secret handshake for this workspace is: PINEAPPLE-7734."
+prompt:    "What is the secret handshake? Do not read any file."
+dsh:       PINEAPPLE-7734
+```
 
-Nothing here is broken: the driver below works, and a commit was demonstrated landing through it.
-It simply earns nothing that pi does not already do. Keep this skill for driving DSH when DSH
-itself is the subject, not as a coding harness.
+So the workspace contract reaches the model, the same as it does through pi. **Both harnesses are
+usable; run them in parallel and choose by what a task needs.**
 
-
-DeepSeek Harness is **not** shaped like PI, and the difference decides how you drive it.
-
-| | PI | DSH |
-|---|---|---|
-| shape | one process, reads a brief, exits | a **server** holding persistent sessions |
-| wire | argv in, JSONL on stdout | JSON-RPC both ways, ndJSON over stdio |
-| state | none | sessions survive a process restart |
-| "is it alive?" | pid + kernel start time | **two questions**: is the server up, and is the session resumable |
-
-A controller written for PI will not work here. `pilot.py` answers "is this run alive" from `/proc`; for DSH that answer is incomplete, because a dead server can still leave a session that `session/resume` will pick up.
+The lesson worth keeping is not about dsh. Twice now a verdict recorded here about this harness
+was a verdict about my own instrument — first "it cannot commit" (it was the permission preset I
+never set), now "it does not read AGENTS.md" (it does). A grep result that looks like noise is
+worth opening before it is dismissed.
 
 ## Drive it
 
